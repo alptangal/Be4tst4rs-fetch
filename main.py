@@ -82,7 +82,7 @@ async def fetchData():
             data['profile']['first_name'],
             data['profile']['last_name'],
             data['profile']['display_name'],
-            data['profile']['avatar']['original'],
+            data['profile']['avatar']['original'] if data['profile']['avatar'] else None,
             data['profile']['location'],
             data['profile']['permalink'],
             data['profile']['relative_uri'],
