@@ -19,7 +19,7 @@ GUILD_ID=1122707918177960047
 RESULT=None
 THREADS=[]
 TIMERAND=None
-STEP=34140
+STEP=40780
 TOKEN=None
 @client.event
 async def on_ready():
