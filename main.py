@@ -19,7 +19,7 @@ GUILD_ID=1122707918177960047
 RESULT=None
 THREADS=[]
 TIMERAND=None
-STEP=0
+STEP=72259
 TOKEN=None
 @client.event
 async def on_ready():
@@ -39,7 +39,7 @@ async def on_ready():
         '''await asyncio.sleep(60)
         if not updateData.is_running():
             updateData.start(guild)'''
-@tasks.loop(seconds=1)
+@tasks.loop(seconds=60)
 async def getToken():
     global TOKEN
     print('getToken is running')
@@ -58,6 +58,7 @@ async def getToken():
             'token':js['tenant_access_token'],
             'expire':js['expire']
         }
+        print(TOKEN)
         
 @tasks.loop(seconds=.1)
 async def fetchData():
@@ -70,6 +71,7 @@ async def fetchData():
     url=f'https://main.v2.beatstars.com/musician?id={STEP}&fields=profile,user_contents,stats,bulk_deals,social_networks,email'
     req=requests.get(url,headers=headers)
     data=req.json()
+    print(data)
     if data['response']['type']=='success':
         data=data['response']['data']
         url='https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values_append'
