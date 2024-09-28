@@ -116,6 +116,6 @@ async def fetchData():
         print(req.text)
         if(req.status_code<400):
             print('Created new record success')
-    STEP+=1
+            STEP+=1
 client.run(os.environ.get('t'))
 
