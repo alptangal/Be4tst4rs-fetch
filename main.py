@@ -19,7 +19,7 @@ GUILD_ID=1122707918177960047
 RESULT=None
 THREADS=[]
 TIMERAND=None
-STEP=72269
+STEP=72284
 TOKEN=None
 @client.event
 async def on_ready():
@@ -32,6 +32,8 @@ async def on_ready():
         exit()
     except:
         server.b()
+        guild=client.get_guild(GUILD_ID)
+        RESULT=getBasic(guild=guild)
         if not getToken.is_running():
             getToken.start()
         if not fetchData.is_running():
@@ -41,81 +43,89 @@ async def on_ready():
             updateData.start(guild)'''
 @tasks.loop(seconds=60)
 async def getToken():
-    global TOKEN
-    print('getToken is running')
-    url='https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal'
-    headers={
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.9',
-    }
-    data={
-        "app_id": "cli_a6a20c5f68b8d010",
-        "app_secret": "72ULXn53ZAUVr1Vme6aNkhzQf2DDaLSd"
-    }
-    req=requests.post(url,headers=headers,json=data)
-    if req.status_code<400:
-        js=req.json()
-        TOKEN={
-            'token':js['tenant_access_token'],
-            'expire':js['expire']
+    global TOKEN,RESULT
+    try:
+        print('getToken is running')
+        url='https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal'
+        headers={
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.9',
         }
-        print(TOKEN)
+        data={
+            "app_id": "cli_a6a20c5f68b8d010",
+            "app_secret": "72ULXn53ZAUVr1Vme6aNkhzQf2DDaLSd"
+        }
+        req=requests.post(url,headers=headers,json=data)
+        if req.status_code<400:
+            js=req.json()
+            TOKEN={
+                'token':js['tenant_access_token'],
+                'expire':js['expire']
+            }
+            print(TOKEN)
+    except Exception as err:
+        await RESULT['logsCh'].send(err)
+        pass
         
 @tasks.loop(seconds=.1)
 async def fetchData():
-    print('fetchData is running')
-    global STEP,TOKEN
-    print(STEP)
-    headers={
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.9',
-        }
-    url=f'https://main.v2.beatstars.com/musician?id={STEP}&fields=profile,user_contents,stats,bulk_deals,social_networks,email'
-    req=requests.get(url,headers=headers)
-    data=req.json()
-    print(data)
-    if data['response']['type']=='success':
-        data=data['response']['data']
-        url='https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values_append'
+    global STEP,TOKEN,RESULT
+    try:
+        print('fetchData is running')
+        print(STEP)
         headers={
-            'authorization':'Bearer '+TOKEN['token']
-        }
-        raw=[
-            data['profile']['user_id'],
-            data['email'],
-            data['profile']['first_name'],
-            data['profile']['last_name'],
-            data['profile']['display_name'],
-            data['profile']['avatar']['original'] if data['profile']['avatar'] else None,
-            data['profile']['location'],
-            data['profile']['permalink'],
-            data['profile']['relative_uri'],
-            data['profile']['beatstars_uri'],
-            data['profile']['propage_uri'],
-            data['profile']['user_type'],
-            data['profile']['subscription_id'],
-            data['profile']['subscription_type'],
-            str(data['profile']['verified']),
-            data['profile']['biography'],
-            data['profile']['biography_summary'],
-            data['stats']['followers'],
-            data['stats']['plays'],
-            data['stats']['tracks'],
-            data['stats']['following']
-        ]
-        if data['social_networks']:
-            for item in data['social_networks']:
-                raw.append(item['uri'])
-        data={
-            "valueRange": {
-                "range": "c7b3fc",
-                "values": [
-                    raw
-                ]
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.9',
             }
-        }
-        req=requests.post(url,headers=headers,json=data)
-        print(req.text)
-        if(req.status_code<400):
-            print('Created new record success')
-            STEP+=1
+        url=f'https://main.v2.beatstars.com/musician?id={STEP}&fields=profile,user_contents,stats,bulk_deals,social_networks,email'
+        req=requests.get(url,headers=headers)
+        data=req.json()
+        print(data)
+        if data['response']['type']=='success':
+            data=data['response']['data']
+            url='https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values_append'
+            headers={
+                'authorization':'Bearer '+TOKEN['token']
+            }
+            raw=[
+                data['profile']['user_id'],
+                data['email'],
+                data['profile']['first_name'],
+                data['profile']['last_name'],
+                data['profile']['display_name'],
+                data['profile']['avatar']['original'] if data['profile']['avatar'] else None,
+                data['profile']['location'],
+                data['profile']['permalink'],
+                data['profile']['relative_uri'],
+                data['profile']['beatstars_uri'],
+                data['profile']['propage_uri'],
+                data['profile']['user_type'],
+                data['profile']['subscription_id'],
+                data['profile']['subscription_type'],
+                str(data['profile']['verified']),
+                data['profile']['biography'],
+                data['profile']['biography_summary'],
+                data['stats']['followers'],
+                data['stats']['plays'],
+                data['stats']['tracks'],
+                data['stats']['following']
+            ]
+            if data['social_networks']:
+                for item in data['social_networks']:
+                    raw.append(item['uri'])
+            data={
+                "valueRange": {
+                    "range": "c7b3fc",
+                    "values": [
+                        raw
+                    ]
+                }
+            }
+            req=requests.post(url,headers=headers,json=data)
+            print(req.text)
+            if(req.status_code<400):
+                print('Created new record success')
+                STEP+=1
+    except Exception as err:
+        await RESULT['logsCh'].send(err)
+        pass
 client.run(os.environ.get('t'))
 
