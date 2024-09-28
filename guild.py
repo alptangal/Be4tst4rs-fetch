@@ -19,6 +19,6 @@ async def getBasic(guild):
                     contentsCh = channel
                     contents = channel.threads
                     contents += [thread async for thread in channel.archived_threads()]
-                elif 'logs' in channel.name:
+                elif 'logs' in channel.name.lower():
                     logsCh = channel
     return {'usernamesCh': usernamesCh, 'usernames': usernames, 'password': password, 'threadsCh': threadsCh, 'threads': threads, 'contentsCh': contentsCh, 'contents': contents,'logsCh':logsCh}

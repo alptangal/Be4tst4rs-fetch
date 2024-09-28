@@ -70,13 +70,18 @@ async def getToken():
 async def fetchData():
     global STEP,TOKEN,RESULT
     try:
+        done=False
         print('fetchData is running')
         print(STEP)
         headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.9',
             }
         url=f'https://main.v2.beatstars.com/musician?id={STEP}&fields=profile,user_contents,stats,bulk_deals,social_networks,email'
-        req=requests.get(url,headers=headers)
+        try:
+            req=requests.get(url,headers=headers)
+        except Exception as err:
+            await RESULT['logsCh'].send(err)
+            exit
         data=req.json()
         print(data)
         if data['response']['type']=='success':
@@ -119,15 +124,19 @@ async def fetchData():
                     ]
                 }
             }
-            req=requests.post(url,headers=headers,json=data)
-            print(req.text)
+            try:
+                req=requests.post(url,headers=headers,json=data)
+            except Exception as err:
+                await RESULT['logsCh'].send(err)
+                exit
             if(req.status_code<400):
                 print('Created new record success')
                 STEP+=1
-        if 'musician not found' in data['response']['data']['message'].lower():
+                done=True
+        if done==False and 'musician not found' in data['response']['data']['message'].lower():
             STEP+=1
     except Exception as err:
         await RESULT['logsCh'].send(err)
-        pass
+        exit
 client.run(os.environ.get('t'))
 
