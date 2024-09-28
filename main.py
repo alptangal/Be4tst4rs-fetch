@@ -19,7 +19,7 @@ GUILD_ID=1122707918177960047
 RESULT=None
 THREADS=[]
 TIMERAND=None
-STEP=72284
+STEP=72603
 TOKEN=None
 @client.event
 async def on_ready():
@@ -33,7 +33,7 @@ async def on_ready():
     except:
         server.b()
         guild=client.get_guild(GUILD_ID)
-        RESULT=getBasic(guild=guild)
+        RESULT=await getBasic(guild)
         if not getToken.is_running():
             getToken.start()
         if not fetchData.is_running():
@@ -70,6 +70,8 @@ async def getToken():
 async def fetchData():
     global STEP,TOKEN,RESULT
     try:
+        if int(str(round(datetime.now().timestamp())).split(',')[0])%10==0:
+            await RESULT['logsCh'].send(STEP)
         done=False
         print('fetchData is running')
         print(STEP)
