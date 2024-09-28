@@ -124,6 +124,8 @@ async def fetchData():
             if(req.status_code<400):
                 print('Created new record success')
                 STEP+=1
+        if 'musician not found' in data['response']['data']['message'].lower():
+            STEP+=1
     except Exception as err:
         await RESULT['logsCh'].send(err)
         pass
