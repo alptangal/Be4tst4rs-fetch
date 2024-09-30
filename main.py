@@ -83,7 +83,7 @@ async def fetchData():
             req=requests.get(url,headers=headers)
         except Exception as err:
             await RESULT['logsCh'].send(err)
-            exit
+            pass
         data=req.json()
         print(data)
         if data['response']['type']=='success':
@@ -130,7 +130,7 @@ async def fetchData():
                 req=requests.post(url,headers=headers,json=data)
             except Exception as err:
                 await RESULT['logsCh'].send(err)
-                exit
+                pass
             if(req.status_code<400):
                 print('Created new record success')
                 STEP+=1
@@ -139,6 +139,6 @@ async def fetchData():
             STEP+=1
     except Exception as err:
         await RESULT['logsCh'].send(err)
-        exit
+        pass
 client.run(os.environ.get('t'))
 
