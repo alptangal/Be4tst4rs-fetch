@@ -19,7 +19,7 @@ GUILD_ID=1122707918177960047
 RESULT=None
 THREADS=[]
 TIMERAND=None
-STEP=148685
+STEP=None
 TOKEN=None
 @client.event
 async def on_ready():
@@ -34,6 +34,7 @@ async def on_ready():
         server.b()
         guild=client.get_guild(GUILD_ID)
         RESULT=await getBasic(guild)
+
         if not getToken.is_running():
             getToken.start()
         if not fetchData.is_running():
@@ -43,7 +44,7 @@ async def on_ready():
             updateData.start(guild)'''
 @tasks.loop(seconds=60)
 async def getToken():
-    global TOKEN,RESULT
+    global TOKEN,RESULT,STEP
     try:
         print('getToken is running')
         url='https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal'
@@ -62,6 +63,25 @@ async def getToken():
                 'expire':js['expire']
             }
             print(TOKEN)
+        if not STEP:
+            headers={
+                'authorization':'Bearer '+TOKEN['token']
+            }
+            url='https://open.larksuite.com/open-apis/sheets/v3/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/sheets/query'
+            req=requests.get(url,headers=headers)
+            if req.status_code<400:
+                js=req.json()
+                if js['code']==0:
+                    for item in js['data']['sheets']:
+                        if item['grid_properties']['row_count']<71428:
+                            url=f"https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values/{item['sheet_id']}!{item['grid_properties']['row_count']}:A{item['grid_properties']['row_count']}"
+                            req=requests.get(url,headers=headers)
+                            if req.status_code<400:
+                                js=req.json()
+                                if js['code']==0:
+                                    STEP=js['data']['valueRange']['values'][0]
+                                    break
+                        break
     except Exception as err:
         await RESULT['logsCh'].send(err)
         pass
@@ -88,53 +108,65 @@ async def fetchData():
         print(data)
         if data['response']['type']=='success':
             data=data['response']['data']
-            url='https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values_append'
             headers={
                 'authorization':'Bearer '+TOKEN['token']
             }
-            raw=[
-                data['profile']['user_id'],
-                data['email'],
-                data['profile']['first_name'],
-                data['profile']['last_name'],
-                data['profile']['display_name'],
-                data['profile']['avatar']['original'] if data['profile']['avatar'] else None,
-                data['profile']['location'],
-                data['profile']['permalink'],
-                data['profile']['relative_uri'],
-                data['profile']['beatstars_uri'],
-                data['profile']['propage_uri'],
-                data['profile']['user_type'],
-                data['profile']['subscription_id'],
-                data['profile']['subscription_type'],
-                str(data['profile']['verified']),
-                data['profile']['biography'],
-                data['profile']['biography_summary'],
-                data['stats']['followers'],
-                data['stats']['plays'],
-                data['stats']['tracks'],
-                data['stats']['following']
-            ]
-            if data['social_networks']:
-                for item in data['social_networks']:
-                    raw.append(item['uri'])
-            data={
-                "valueRange": {
-                    "range": "asjc78",
-                    "values": [
-                        raw
+            url='https://open.larksuite.com/open-apis/sheets/v3/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/sheets/query'
+            sheets=[]
+            req=requests.get(url,headers=headers)
+            if req.status_code<400:
+                js=req.json()
+                if js['code']==0:
+                    for item in js['data']['sheets']:
+                        sheets.append(item)
+            for sheet in sheets:
+                if sheet['grid_properties']['row_count']<71428:
+                    url='https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values_append'
+
+                    raw=[
+                        data['profile']['user_id'],
+                        data['email'],
+                        data['profile']['first_name'],
+                        data['profile']['last_name'],
+                        data['profile']['display_name'],
+                        data['profile']['avatar']['original'] if data['profile']['avatar'] else None,
+                        data['profile']['location'],
+                        data['profile']['permalink'],
+                        data['profile']['relative_uri'],
+                        data['profile']['beatstars_uri'],
+                        data['profile']['propage_uri'],
+                        data['profile']['user_type'],
+                        data['profile']['subscription_id'],
+                        data['profile']['subscription_type'],
+                        str(data['profile']['verified']),
+                        data['profile']['biography'],
+                        data['profile']['biography_summary'],
+                        data['stats']['followers'],
+                        data['stats']['plays'],
+                        data['stats']['tracks'],
+                        data['stats']['following']
                     ]
-                }
-            }
-            try:
-                req=requests.post(url,headers=headers,json=data)
-            except Exception as err:
-                await RESULT['logsCh'].send(err)
-                pass
-            if(req.status_code<400):
-                print('Created new record success')
-                STEP+=1
-                done=True
+                    if data['social_networks']:
+                        for item in data['social_networks']:
+                            raw.append(item['uri'])
+                    data={
+                        "valueRange": {
+                            "range": sheet['sheet_id'],
+                            "values": [
+                                raw
+                            ]
+                        }
+                    }
+                    try:
+                        req=requests.post(url,headers=headers,json=data)
+                    except Exception as err:
+                        await RESULT['logsCh'].send(err)
+                        pass
+                    if(req.status_code<400):
+                        print('Created new record success')
+                        STEP+=1
+                        done=True
+                        break
         if done==False and 'musician not found' in data['response']['data']['message'].lower():
             STEP+=1
     except Exception as err:
