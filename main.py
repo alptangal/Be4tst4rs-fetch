@@ -79,7 +79,8 @@ async def getToken():
                             if req.status_code<400:
                                 js=req.json()
                                 if js['code']==0:
-                                    STEP=js['data']['valueRange']['values'][0]
+                                    STEP=int(js['data']['valueRange']['values'][0])
+                                    print(f"BEGIN at {STEP}")
                                     break
                         break
     except Exception as err:
