@@ -39,9 +39,6 @@ async def on_ready():
             getToken.start()
         if not fetchData.is_running():
             fetchData.start()
-        '''await asyncio.sleep(60)
-        if not updateData.is_running():
-            updateData.start(guild)'''
 @tasks.loop(seconds=60)
 async def getToken():
     global TOKEN,RESULT,STEP
@@ -73,17 +70,19 @@ async def getToken():
                 js=req.json()
                 if js['code']==0:
                     for item in js['data']['sheets']:
+                        print(item)
                         if item['grid_properties']['row_count']<71428:
-                            url=f"https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values/{item['sheet_id']}!{item['grid_properties']['row_count']}:A{item['grid_properties']['row_count']}"
+                            url=f"https://open.larksuite.com/open-apis/sheets/v2/spreadsheets/ObB8syGTHhzLpjtkIuvlL893gcf/values/{item['sheet_id']}!A{item['grid_properties']['row_count']}:A{item['grid_properties']['row_count']}"
                             req=requests.get(url,headers=headers)
                             if req.status_code<400:
+                                
                                 js=req.json()
                                 if js['code']==0:
-                                    STEP=int(js['data']['valueRange']['values'][0])
+                                    STEP=int(js['data']['valueRange']['values'][0][0])+1
                                     print(f"BEGIN at {STEP}")
-                                    break
-                        break
+                            break
     except Exception as err:
+        print(err)
         await RESULT['logsCh'].send(err)
         pass
         
